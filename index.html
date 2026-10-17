@@ -71,7 +71,8 @@
     }
     .tab {
       flex: 1;
-      padding: 12px;
+      padding: 12px 4px;
+      font-size: 0.95rem;
       border: 2px solid var(--border);
       border-radius: 12px;
       background: white;
@@ -224,6 +225,80 @@
     }
     .toolbar .btn { flex: 1; min-width: 120px; }
     #file-input { display: none; }
+    /* ---------- Long division ---------- */
+    .dmsb { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0 6px; }
+    .dmsb-step {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 8px 2px; border: 2px solid var(--border); border-radius: 12px;
+      background: white; opacity: 0.5; transition: all 0.15s;
+    }
+    .dmsb-step.active { opacity: 1; border-color: var(--primary); background: #eff6ff; }
+    .dmsb-step.done { opacity: 0.85; }
+    .dmsb-badge {
+      width: 30px; height: 30px; border-radius: 50%; color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.95rem;
+    }
+    .dmsb-d { background: #f59e0b; }
+    .dmsb-m, .dmsb-s, .dmsb-b { background: #ef4444; }
+    .dmsb-word { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-align: center; }
+    .dmsb-step.active .dmsb-word { color: var(--primary); }
+    .mnemonic { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+    .mnemonic b { color: var(--danger); font-size: 0.95rem; }
+
+    .ld-wrap { overflow-x: auto; padding: 6px 0; }
+    .ld-grid {
+      display: grid; width: max-content; margin: 0 auto;
+      font-variant-numeric: tabular-nums; font-weight: 700;
+      color: #1e3a8a; font-size: 2rem; line-height: 1.25;
+    }
+    .ld-cell { text-align: center; min-height: 1.25em; }
+    .ld-gutter { text-align: right; padding-right: 3px; white-space: nowrap; }
+    .ld-quotient { color: var(--danger); }
+    .ld-dividend { border-top: 3px solid #1e3a8a; padding-top: 2px; }
+    .ld-bracket { border-left: 3px solid #1e3a8a; border-top-left-radius: 12px; }
+    .ld-rule { border-top: 3px solid #1e3a8a; }
+    .ld-brought { color: var(--danger); }
+    .ld-drop { animation: dropIn 0.35s ease-out; }
+    .ld-remainder { color: var(--danger); }
+    .ld-box {
+      border: 2px dashed var(--primary); border-radius: 8px;
+      background: #eff6ff; min-height: 1.1em; animation: pulseBox 1.4s ease-in-out infinite;
+    }
+    .ld-box.ld-rule { border-top: 3px solid #1e3a8a; }
+    @keyframes dropIn { from { transform: translateY(-22px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes pulseBox { 0%,100% { background: #eff6ff; } 50% { background: #dbeafe; } }
+
+    .help-card {
+      background: #f8fafc; border: 2px dashed var(--border);
+      border-radius: 12px; padding: 12px; margin-bottom: 10px;
+    }
+    .help-title { font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+    .blocks { display: flex; flex-wrap: wrap; gap: 7px; }
+    .blocks.strip { gap: 3px; }
+    .block-group {
+      display: flex; gap: 2px; padding: 3px;
+      border: 2px solid var(--primary); border-radius: 6px; background: #eff6ff;
+    }
+    .block-group.partial { border-style: dashed; border-color: #cbd5e1; background: white; }
+    .unit { width: 13px; height: 13px; background: var(--primary); border-radius: 2px; }
+    .block-group.partial .unit { background: #cbd5e1; }
+    .unit.gone {
+      background: #fecaca;
+      background-image: linear-gradient(45deg, transparent 44%, #b91c1c 44%, #b91c1c 56%, transparent 56%);
+    }
+    .ladder { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 4px; }
+    .ladder-row {
+      font-size: 0.88rem; font-weight: 600; padding: 5px 8px; border-radius: 8px;
+      background: white; border: 1px solid var(--border); text-align: center;
+    }
+    .ladder-row.fits { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+    .ladder-row.best { background: #dcfce7; border-color: var(--success); color: #15803d; font-weight: 800; }
+    .ladder-row.over { color: #cbd5e1; background: #fafafa; }
+    .ld-prompt { text-align: center; font-size: 1.35rem; font-weight: 700; margin: 4px 0 2px; }
+    #div-answer { min-height: 38px; margin-bottom: 4px; }
+    #div-feedback { min-height: 26px; margin: 2px 0 6px; }
+    .ld-sub { text-align: center; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -231,7 +306,7 @@
     <!-- HOME -->
     <div id="screen-home">
       <h1>Math Facts Trainer</h1>
-      <p class="subtitle">Addition & Times Tables · Timed practice</p>
+      <p class="subtitle">Addition · Times Tables · Long Division</p>
 
       <div class="toolbar">
         <button class="btn btn-outline btn-sm" onclick="exportProgress()">Export Progress</button>
@@ -242,6 +317,7 @@
       <div class="tabs">
         <div class="tab active" data-type="addition" onclick="switchType('addition')">Addition</div>
         <div class="tab" data-type="multiplication" onclick="switchType('multiplication')">Times Tables</div>
+        <div class="tab" data-type="division" onclick="switchType('division')">Long Division</div>
       </div>
 
       <div id="set-list" class="set-list"></div>
@@ -316,6 +392,87 @@
         <button class="btn btn-primary btn-block" onclick="retryMistakes()">Retry Slow / Wrong Facts</button>
         <button class="btn btn-outline btn-block" onclick="startSameSet()">Practice This Set Again</button>
         <button class="btn btn-outline btn-block" onclick="showHome()">Back to Sets</button>
+      </div>
+    </div>
+
+    <!-- LONG DIVISION -->
+    <div id="screen-division" class="hidden">
+      <div class="quiz-header">
+        <button class="btn btn-outline btn-sm" onclick="quitDivision()">← Back</button>
+        <div id="div-title" style="font-weight:700;font-size:1.05rem"></div>
+        <div id="div-progress-text" style="font-weight:600;font-size:0.95rem"></div>
+      </div>
+      <div class="progress-bar"><div class="fill" id="div-progress-fill" style="width:0%"></div></div>
+
+      <div class="card" style="padding:14px 10px">
+        <div class="ld-wrap"><div class="ld-grid" id="div-grid"></div></div>
+      </div>
+
+      <div class="dmsb" id="div-dmsb"></div>
+      <p class="mnemonic"><b>D</b>oes <b>M</b>cDonald's <b>S</b>ell <b>B</b>urgers?</p>
+
+      <div class="ld-prompt" id="div-prompt"></div>
+      <div class="ld-sub" id="div-sub"></div>
+      <div class="answer-display" id="div-answer"></div>
+      <div class="feedback" id="div-feedback"></div>
+
+      <div id="div-help-row" style="text-align:center;margin-bottom:10px">
+        <button class="btn btn-outline btn-sm" id="div-help-btn" onclick="toggleDivHelp()">Show me boxes</button>
+      </div>
+      <div id="div-help" style="display:none"></div>
+
+      <div class="numpad" id="div-numpad">
+        <button onclick="divKey('1')">1</button>
+        <button onclick="divKey('2')">2</button>
+        <button onclick="divKey('3')">3</button>
+        <button onclick="divKey('4')">4</button>
+        <button onclick="divKey('5')">5</button>
+        <button onclick="divKey('6')">6</button>
+        <button onclick="divKey('7')">7</button>
+        <button onclick="divKey('8')">8</button>
+        <button onclick="divKey('9')">9</button>
+        <button onclick="divKey('C')" style="background:#fee2e2;color:#b91c1c">C</button>
+        <button onclick="divKey('0')">0</button>
+        <button onclick="divSubmit()" style="background:#dcfce7;color:#15803d">✓</button>
+      </div>
+
+      <button class="btn btn-success btn-block hidden" id="div-bring-btn" onclick="divBringDown()"></button>
+
+      <div class="card hidden" id="div-complete">
+        <div id="div-complete-text" style="text-align:center;font-weight:700;font-size:1.3rem;margin-bottom:12px"></div>
+        <button class="btn btn-primary btn-block" onclick="divNextProblem()">Next problem →</button>
+      </div>
+    </div>
+
+    <!-- LONG DIVISION RESULTS -->
+    <div id="screen-division-results" class="hidden">
+      <h1 style="margin-bottom:8px">Long Division</h1>
+      <div class="results-summary">
+        <div class="big" id="div-result-score"></div>
+        <div style="color:var(--muted)">Steps right first time</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="label">Problems solved</div>
+          <div class="value" id="div-result-count"></div>
+        </div>
+        <div class="stat">
+          <div class="label">Boxes used</div>
+          <div class="value" id="div-result-hints"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="div-result-status" style="text-align:center;font-weight:700;font-size:1.1rem"></div>
+      </div>
+
+      <h3 style="margin:12px 0 8px;font-size:1rem">What you worked out</h3>
+      <div class="slow-list" id="div-result-list"></div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+        <button class="btn btn-primary btn-block" onclick="startDivision(divLevelId)">Practice This Level Again</button>
+        <button class="btn btn-outline btn-block" onclick="showHome()">Back to Levels</button>
       </div>
     </div>
   </div>
@@ -522,12 +679,20 @@ let isTimed = true;
 let lastMistakes = [];
 
 // ========== PROGRESS ==========
+function normalizeProgress(p) {
+  p = p || {};
+  p.addition = p.addition || {};
+  p.multiplication = p.multiplication || {};
+  p.division = p.division || {};
+  return p;
+}
+
 function loadProgress() {
   try {
     const raw = localStorage.getItem("mathFactsProgress_v1");
-    if (raw) return JSON.parse(raw);
+    if (raw) return normalizeProgress(JSON.parse(raw));
   } catch(e) {}
-  return { addition: {}, multiplication: {} };
+  return normalizeProgress({});
 }
 
 function saveProgress() {
@@ -542,8 +707,17 @@ function getSetStatus(type, setId) {
   return "practising";
 }
 
-function statusLabel(s) {
+function statusLabel(s, type) {
+  if (type === "division") {
+    return { none: "Not started", practising: "Practising", fluent: "Solid", auto: "Mastered" }[s];
+  }
   return { none: "Not started", practising: "Practising", fluent: "Fluent", auto: "Automatic" }[s];
+}
+
+function currentSets() {
+  if (currentType === "addition") return ADDITION_SETS;
+  if (currentType === "multiplication") return MULT_SETS;
+  return DIVISION_LEVELS;
 }
 
 function statusClass(s) {
@@ -558,7 +732,7 @@ function switchType(type) {
 }
 
 function renderSetList() {
-  const sets = currentType === "addition" ? ADDITION_SETS : MULT_SETS;
+  const sets = currentSets();
   const list = document.getElementById("set-list");
   list.innerHTML = "";
 
@@ -570,7 +744,7 @@ function renderSetList() {
     item.onclick = () => openSet(id);
     item.innerHTML = `
       <div class="name">${set.name}</div>
-      <div class="status ${statusClass(status)}">${statusLabel(status)}</div>
+      <div class="status ${statusClass(status)}">${statusLabel(status, currentType)}</div>
     `;
     list.appendChild(item);
   });
@@ -578,7 +752,11 @@ function renderSetList() {
 
 function openSet(setId) {
   currentSetId = setId;
-  const sets = currentType === "addition" ? ADDITION_SETS : MULT_SETS;
+  if (currentType === "division") {
+    startDivision(setId);
+    return;
+  }
+  const sets = currentSets();
   const set = sets[setId];
 
   // Simple choice: Practice or Timed
@@ -743,7 +921,7 @@ function retryMistakes() {
 }
 
 function startSameSet() {
-  const sets = currentType === "addition" ? ADDITION_SETS : MULT_SETS;
+  const sets = currentSets();
   startQuiz(sets[currentSetId].facts.slice());
 }
 
@@ -759,9 +937,477 @@ function showHome() {
 }
 
 function showScreen(name) {
-  ["home","quiz","results"].forEach(s => {
+  ["home","quiz","results","division","division-results"].forEach(s => {
     document.getElementById("screen-" + s).classList.toggle("hidden", s !== name);
   });
+}
+
+// ========== LONG DIVISION ==========
+// Method: D-M-S-B — "Does McDonald's Sell Burgers?"
+// Divide, Multiply, Subtract, Bring down.
+
+const DIVISION_LEVELS = {
+  "ld-2d-exact": { name: "1 – Two digits ÷ 1 (no remainder)", digits: 2, divisors: [2,3,4,5], remainder: false, count: 5 },
+  "ld-2d-rem":   { name: "2 – Two digits ÷ 1 (remainders)",   digits: 2, divisors: [2,3,4,5,6,7,8,9], remainder: true,  count: 5 },
+  "ld-3d-exact": { name: "3 – Three digits ÷ 1 (no remainder)", digits: 3, divisors: [2,3,4,5,6], remainder: false, count: 5 },
+  "ld-3d-rem":   { name: "4 – Three digits ÷ 1 (remainders)",   digits: 3, divisors: [2,3,4,5,6,7,8,9], remainder: true,  count: 5 },
+  "ld-zero":     { name: "5 – Zero in the answer",              digits: 3, divisors: [2,3,4,5,6,7,8,9], remainder: null, zero: true, count: 5 },
+  "ld-4d":       { name: "6 – Four digits ÷ 1",                 digits: 4, divisors: [2,3,4,5,6,7,8,9], remainder: null, count: 5 },
+  "ld-mixed":    { name: "7 – Mixed challenge",                 mixed: true, count: 6 }
+};
+
+const MIXED_POOL = ["ld-2d-rem","ld-3d-exact","ld-3d-rem","ld-zero","ld-4d"];
+
+const PHASE_ORDER = ["D","M","S","B","done"];
+const PHASE_INFO = {
+  D: { word: "Divide",     cls: "dmsb-d" },
+  M: { word: "Multiply",   cls: "dmsb-m" },
+  S: { word: "Subtract",   cls: "dmsb-s" },
+  B: { word: "Bring down", cls: "dmsb-b" }
+};
+
+let divLevelId = null;
+let divProblems = [];
+let divProbIndex = 0;
+let divProb = null;
+let divStepIndex = 0;
+let divPhase = "D";
+let divInput = "";
+let divWrong = 0;
+let divFirstTry = true;
+let divHelpOpen = false;
+let divLocked = false;   // held while a tick or a correction is on screen
+let divStats = null;
+
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pickOne(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Every D-M-S-B cycle of one problem, worked out in advance.
+function buildSteps(dividend, divisor) {
+  const digits = String(dividend).split("").map(Number);
+  const steps = [];
+  let i = 0;
+  let working = digits[0];
+  // The first chunk is the shortest run of digits that the divisor fits into.
+  while (working < divisor && i < digits.length - 1) {
+    i++;
+    working = working * 10 + digits[i];
+  }
+  while (true) {
+    const q = Math.floor(working / divisor);
+    const p = q * divisor;
+    const r = working - p;
+    const bring = i + 1 < digits.length ? digits[i + 1] : null;
+    steps.push({ col: i, working, q, p, r, bring });
+    if (bring === null) break;
+    i++;
+    working = r * 10 + digits[i];
+  }
+  return steps;
+}
+
+function makeProblem(cfg) {
+  const lo = Math.pow(10, cfg.digits - 1);
+  const hi = Math.pow(10, cfg.digits) - 1;
+  for (let tries = 0; tries < 600; tries++) {
+    const divisor = pickOne(cfg.divisors);
+    let dividend = randInt(lo, hi);
+    const r = dividend % divisor;
+    if (cfg.remainder === false && r !== 0) dividend -= r;
+    if (cfg.remainder === true && r === 0) dividend += 1;
+    if (dividend < lo || dividend > hi) continue;
+    if (cfg.remainder === false && dividend % divisor !== 0) continue;
+    if (cfg.remainder === true && dividend % divisor === 0) continue;
+
+    const steps = buildSteps(dividend, divisor);
+    if (steps.length < 2) continue; // needs at least two D-M-S-B cycles to be long division
+    const quotient = Math.floor(dividend / divisor);
+    // "Zero in the answer" levels need a 0 somewhere after the leading digit.
+    if (cfg.zero && !String(quotient).slice(1).includes("0")) continue;
+    if (!cfg.zero && String(quotient).includes("0") && Math.random() < 0.6) continue;
+
+    return {
+      dividend, divisor, quotient,
+      remainder: dividend % divisor,
+      digits: String(dividend).split("").map(Number),
+      steps
+    };
+  }
+  // Fallback that always satisfies the digit count.
+  const divisor = pickOne(cfg.divisors);
+  const dividend = Math.max(lo, divisor * randInt(Math.ceil(lo / divisor), Math.floor(hi / divisor)));
+  return {
+    dividend, divisor,
+    quotient: Math.floor(dividend / divisor),
+    remainder: dividend % divisor,
+    digits: String(dividend).split("").map(Number),
+    steps: buildSteps(dividend, divisor)
+  };
+}
+
+function startDivision(levelId) {
+  divLevelId = levelId;
+  const lvl = DIVISION_LEVELS[levelId];
+  divProblems = [];
+  for (let i = 0; i < lvl.count; i++) {
+    divProblems.push(makeProblem(lvl.mixed ? DIVISION_LEVELS[pickOne(MIXED_POOL)] : lvl));
+  }
+  divProbIndex = 0;
+  divStats = { steps: 0, firstTry: 0, hints: 0, solved: [] };
+  showScreen("division");
+  loadDivProblem();
+}
+
+function loadDivProblem() {
+  divProb = divProblems[divProbIndex];
+  divStepIndex = 0;
+  divPhase = "D";
+  divInput = "";
+  divWrong = 0;
+  divFirstTry = true;
+  divHelpOpen = false;
+  divLocked = false;
+  renderDivision();
+}
+
+// ---------- the written layout ----------
+// Grid column 1 is the divisor gutter; dividend digit i sits in column i + 2.
+function renderDivGrid() {
+  const prob = divProb;
+  const n = prob.digits.length;
+  const g = document.getElementById("div-grid");
+  g.style.gridTemplateColumns = "minmax(1.5em, auto) repeat(" + n + ", 1.1em)";
+
+  const cells = [];
+  const add = (row, col, text, cls) =>
+    cells.push('<div class="ld-cell ' + (cls || "") + '" style="grid-row:' + row + ';grid-column:' + col + '">' + text + "</div>");
+
+  // Row 1 – the answer, written above the line.
+  prob.steps.forEach((s, k) => {
+    if (phasePassed(k, "D")) add(1, s.col + 2, s.q, "ld-quotient");
+    else if (isActive(k, "D")) add(1, s.col + 2, "&nbsp;", "ld-box");
+  });
+
+  // Row 2 – divisor, bracket and dividend.
+  add(2, 1, prob.divisor, "ld-gutter");
+  prob.digits.forEach((d, i) => {
+    add(2, i + 2, d, "ld-dividend" + (i === 0 ? " ld-bracket" : ""));
+  });
+
+  // Rows 3+ – two rows per step: what we took away, and what was left.
+  prob.steps.forEach((s, k) => {
+    if (k > divStepIndex) return;
+    const prodRow = 3 + 2 * k;
+    const diffRow = 4 + 2 * k;
+    const endCol = s.col + 2;
+
+    if (phasePassed(k, "M")) {
+      const text = String(s.p);
+      const startCol = endCol - text.length + 1;
+      if (startCol - 1 >= 1) add(prodRow, startCol - 1, "−", "ld-cell");
+      text.split("").forEach((ch, j) => add(prodRow, startCol + j, ch));
+      // the line under the subtraction — the last column is drawn with the difference
+      for (let c = Math.max(1, startCol - 1); c < endCol; c++) add(diffRow, c, "&nbsp;", "ld-rule");
+    } else if (isActive(k, "M")) {
+      add(prodRow, endCol - 1, "−", "ld-cell");
+      add(prodRow, endCol, "&nbsp;", "ld-box");
+    }
+
+    if (phasePassed(k, "S")) {
+      const last = k === prob.steps.length - 1;
+      add(diffRow, endCol, s.r, "ld-rule" + (last ? " ld-remainder" : ""));
+    } else if (isActive(k, "S")) {
+      add(diffRow, endCol, "&nbsp;", "ld-box ld-rule");
+    }
+
+    if (s.bring !== null) {
+      if (phasePassed(k, "B")) {
+        // only the digit that just came down gets the falling animation
+        add(diffRow, endCol + 1, s.bring, "ld-brought" + (k === divStepIndex - 1 ? " ld-drop" : ""));
+      }
+      else if (isActive(k, "B")) add(diffRow, endCol + 1, "&nbsp;", "ld-box");
+    }
+  });
+
+  g.innerHTML = cells.join("");
+
+  // Clear the animation class on a timer, so a throttled or skipped animation
+  // can never leave the digit stuck out of place.
+  const dropped = g.querySelector(".ld-drop");
+  if (dropped) setTimeout(() => dropped.classList.remove("ld-drop"), 450);
+}
+
+function phasePassed(k, ph) {
+  if (k < divStepIndex) return true;
+  if (k > divStepIndex) return false;
+  return PHASE_ORDER.indexOf(divPhase) > PHASE_ORDER.indexOf(ph);
+}
+
+function isActive(k, ph) {
+  return k === divStepIndex && divPhase === ph;
+}
+
+function renderDmsb() {
+  document.getElementById("div-dmsb").innerHTML = ["D","M","S","B"].map(p => {
+    const info = PHASE_INFO[p];
+    const state = divPhase === p ? "active"
+      : PHASE_ORDER.indexOf(divPhase) > PHASE_ORDER.indexOf(p) ? "done" : "";
+    return '<div class="dmsb-step ' + state + '">' +
+      '<div class="dmsb-badge ' + info.cls + '">' + p + "</div>" +
+      '<div class="dmsb-word">' + info.word + "</div></div>";
+  }).join("");
+}
+
+function divExpected() {
+  const s = divProb.steps[divStepIndex];
+  if (divPhase === "D") return s.q;
+  if (divPhase === "M") return s.p;
+  if (divPhase === "S") return s.r;
+  return null;
+}
+
+function renderDivision() {
+  const prob = divProb;
+  const s = prob.steps[divStepIndex];
+  const total = divProblems.length;
+
+  document.getElementById("div-title").textContent = prob.dividend + " ÷ " + prob.divisor;
+  document.getElementById("div-progress-text").textContent = (divProbIndex + 1) + " / " + total;
+  document.getElementById("div-progress-fill").style.width = ((divProbIndex / total) * 100) + "%";
+
+  renderDivGrid();
+  renderDmsb();
+
+  const prompt = document.getElementById("div-prompt");
+  const sub = document.getElementById("div-sub");
+  const numpad = document.getElementById("div-numpad");
+  const bringBtn = document.getElementById("div-bring-btn");
+  const complete = document.getElementById("div-complete");
+  const helpRow = document.getElementById("div-help-row");
+
+  numpad.classList.add("hidden");
+  bringBtn.classList.add("hidden");
+  complete.classList.add("hidden");
+  helpRow.style.display = "none";
+
+  const typing = divPhase === "D" || divPhase === "M" || divPhase === "S";
+  document.getElementById("div-answer").style.display = typing ? "" : "none";
+  document.getElementById("div-feedback").style.display = typing ? "" : "none";
+
+  if (divPhase === "D") {
+    prompt.textContent = "How many " + prob.divisor + "s are in " + s.working + "?";
+    sub.textContent = "Divide — write the answer above the line";
+    numpad.classList.remove("hidden");
+    helpRow.style.display = "block";
+  } else if (divPhase === "M") {
+    prompt.textContent = s.q + " × " + prob.divisor + " = ?";
+    sub.textContent = "Multiply — write it under the " + s.working;
+    numpad.classList.remove("hidden");
+    helpRow.style.display = "block";
+  } else if (divPhase === "S") {
+    prompt.textContent = s.working + " − " + s.p + " = ?";
+    sub.textContent = "Subtract — what is left over";
+    numpad.classList.remove("hidden");
+    helpRow.style.display = "block";
+  } else if (divPhase === "B") {
+    prompt.textContent = "Bring down the " + s.bring;
+    sub.textContent = "Bring down — it joins the " + s.r + " to make " + (s.r * 10 + s.bring);
+    bringBtn.textContent = "Bring down the " + s.bring + "  ↓";
+    bringBtn.classList.remove("hidden");
+  } else {
+    prompt.textContent = "Solved!";
+    sub.textContent = prob.remainder
+      ? "Nothing left to bring down, so " + prob.remainder + " is the remainder."
+      : "Nothing left to bring down, and nothing left over.";
+    document.getElementById("div-complete-text").textContent =
+      prob.dividend + " ÷ " + prob.divisor + " = " + prob.quotient +
+      (prob.remainder ? " remainder " + prob.remainder : "");
+    complete.classList.remove("hidden");
+  }
+
+  document.getElementById("div-answer").textContent = divInput;
+  document.getElementById("div-help-btn").textContent = divHelpOpen ? "Hide the boxes" : "Show me boxes";
+  renderDivHelp();
+}
+
+// ---------- the helper boxes ----------
+function groupsHtml(total, size) {
+  const full = Math.floor(total / size);
+  const left = total % size;
+  let groups = "";
+  for (let i = 0; i < full; i++) {
+    groups += '<div class="block-group">' + '<div class="unit"></div>'.repeat(size) + "</div>";
+  }
+  if (left) groups += '<div class="block-group partial">' + '<div class="unit"></div>'.repeat(left) + "</div>";
+  return '<div class="help-card">' +
+    '<div class="help-title">' + total + " counters shared into groups of " + size +
+    " — count the full blue groups</div>" +
+    '<div class="blocks">' + groups + "</div></div>";
+}
+
+function ladderHtml(divisor, working, highlight) {
+  let rows = "";
+  for (let i = 1; i <= 9; i++) {
+    const val = divisor * i;
+    let cls = "";
+    if (highlight != null) cls = i === highlight ? "best" : "";
+    else if (working != null) cls = val > working ? "over" : "fits";
+    rows += '<div class="ladder-row ' + cls + '">' + divisor + " × " + i + " = " + val + "</div>";
+  }
+  const title = highlight != null
+    ? "The " + divisor + "× table"
+    : "The " + divisor + "× table — the grey ones are too big for " + working;
+  return '<div class="help-card"><div class="help-title">' + title + "</div>" +
+    '<div class="ladder">' + rows + "</div></div>";
+}
+
+function takeAwayHtml(total, take) {
+  let units = "";
+  for (let i = 0; i < total; i++) {
+    units += '<div class="unit ' + (i < take ? "gone" : "") + '"></div>';
+  }
+  return '<div class="help-card">' +
+    '<div class="help-title">Start with ' + total + ", cross out " + take +
+    " — count what is left</div>" +
+    '<div class="blocks strip">' + units + "</div></div>";
+}
+
+function renderDivHelp() {
+  const el = document.getElementById("div-help");
+  if (!divHelpOpen || divPhase === "B" || divPhase === "done") {
+    el.style.display = "none";
+    el.innerHTML = "";
+    return;
+  }
+  const s = divProb.steps[divStepIndex];
+  let html = "";
+  if (divPhase === "D") html = groupsHtml(s.working, divProb.divisor) + ladderHtml(divProb.divisor, s.working, null);
+  else if (divPhase === "M") html = ladderHtml(divProb.divisor, null, s.q);
+  else if (divPhase === "S") html = takeAwayHtml(s.working, s.p);
+  el.innerHTML = html;
+  el.style.display = "block";
+}
+
+function toggleDivHelp() {
+  divHelpOpen = !divHelpOpen;
+  if (divHelpOpen) divStats.hints++;
+  document.getElementById("div-help-btn").textContent = divHelpOpen ? "Hide the boxes" : "Show me boxes";
+  renderDivHelp();
+}
+
+// ---------- answering ----------
+function divKey(k) {
+  if (divLocked || divPhase === "B" || divPhase === "done") return;
+  if (k === "C") divInput = "";
+  else if (divInput.length < 2) divInput += k;
+  document.getElementById("div-answer").textContent = divInput;
+}
+
+function divSubmit() {
+  if (divLocked || divPhase === "B" || divPhase === "done") return;
+  if (divInput === "") return;
+  const fb = document.getElementById("div-feedback");
+  const expected = divExpected();
+
+  if (Number(divInput) === expected) {
+    divStats.steps++;
+    if (divFirstTry) divStats.firstTry++;
+    fb.textContent = "✓";
+    fb.className = "feedback correct";
+    divInput = "";
+    divLocked = true;
+    setTimeout(() => { fb.textContent = ""; divNextPhase(); }, 350);
+    return;
+  }
+
+  divWrong++;
+  divFirstTry = false;
+  divInput = "";
+  document.getElementById("div-answer").textContent = "";
+
+  if (divWrong >= 4) {
+    divStats.steps++;
+    fb.textContent = "The answer is " + expected;
+    fb.className = "feedback wrong";
+    divLocked = true;
+    setTimeout(() => { fb.textContent = ""; divNextPhase(); }, 1600);
+    return;
+  }
+
+  fb.textContent = divWrong >= 2 ? "✗ Not yet — try the boxes" : "✗ Try again";
+  fb.className = "feedback wrong";
+  if (divWrong === 2 && !divHelpOpen) {
+    divHelpOpen = true;
+    divStats.hints++;
+    renderDivHelp();
+    document.getElementById("div-help-btn").textContent = "Hide the boxes";
+  }
+}
+
+function divNextPhase() {
+  const s = divProb.steps[divStepIndex];
+  if (divPhase === "D") divPhase = "M";
+  else if (divPhase === "M") divPhase = "S";
+  else if (divPhase === "S") divPhase = s.bring === null ? "done" : "B";
+  else if (divPhase === "B") { divStepIndex++; divPhase = "D"; }
+
+  divWrong = 0;
+  divFirstTry = true;
+  divInput = "";
+  divHelpOpen = false;
+  divLocked = false;
+  if (divPhase === "done") {
+    divStats.solved.push(divProb);
+  }
+  renderDivision();
+}
+
+function divBringDown() {
+  if (divPhase !== "B") return;
+  divNextPhase();
+}
+
+function divNextProblem() {
+  divProbIndex++;
+  if (divProbIndex >= divProblems.length) {
+    finishDivision();
+    return;
+  }
+  loadDivProblem();
+}
+
+function quitDivision() {
+  if (confirm("Quit this level?")) showHome();
+}
+
+function finishDivision() {
+  showScreen("division-results");
+  const pct = divStats.steps ? Math.round((divStats.firstTry / divStats.steps) * 100) : 0;
+
+  document.getElementById("div-result-score").textContent = pct + "%";
+  document.getElementById("div-result-count").textContent = divStats.solved.length;
+  document.getElementById("div-result-hints").textContent = divStats.hints;
+
+  let msg;
+  if (pct < 60) msg = "Keep going — take each step one at a time.";
+  else if (pct < 85) msg = "Good work. The boxes are there whenever you need them.";
+  else if (divStats.hints > 0) msg = "Strong — nearly every step right first time.";
+  else msg = "Excellent — every step your own, no help needed!";
+  document.getElementById("div-result-status").textContent = msg;
+
+  document.getElementById("div-result-list").innerHTML = divStats.solved.map(p =>
+    '<div class="slow-item"><span>' + p.dividend + " ÷ " + p.divisor + "</span><span>" +
+    p.quotient + (p.remainder ? " r " + p.remainder : "") + "</span></div>"
+  ).join("");
+
+  const rec = progress.division[divLevelId] || { attempts: 0, best: 0, fluent: false, automatic: false };
+  rec.attempts++;
+  if (pct > rec.best) rec.best = pct;
+  if (pct >= 85) rec.fluent = true;
+  if (pct >= 100 && divStats.hints === 0) rec.automatic = true;
+  rec.lastDate = new Date().toISOString().slice(0, 10);
+  progress.division[divLevelId] = rec;
+  saveProgress();
 }
 
 // ========== EXPORT / IMPORT ==========
@@ -788,7 +1434,7 @@ function importProgress(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (data.progress) {
-        progress = data.progress;
+        progress = normalizeProgress(data.progress);
         saveProgress();
         renderSetList();
         alert("Progress imported successfully!");
@@ -805,6 +1451,16 @@ function importProgress(event) {
 
 // Keyboard support
 document.addEventListener("keydown", e => {
+  if (!document.getElementById("screen-division").classList.contains("hidden")) {
+    if (e.key >= "0" && e.key <= "9") divKey(e.key);
+    else if (e.key === "Backspace" || e.key === "Delete") divKey("C");
+    else if (e.key === "Enter") {
+      if (divPhase === "B") divBringDown();
+      else if (divPhase === "done") divNextProblem();
+      else divSubmit();
+    }
+    return;
+  }
   if (document.getElementById("screen-quiz").classList.contains("hidden")) return;
   if (e.key >= "0" && e.key <= "9") pressKey(e.key);
   else if (e.key === "Backspace" || e.key === "Delete") pressKey("C");
